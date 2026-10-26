@@ -79,7 +79,6 @@
             color: var(--primary-dark);
         }
 
-        /* Tabla de inputs */
         .data-row {
             display: flex;
             gap: 10px;
@@ -299,7 +298,7 @@
 
     <script>
         let chartInstance = null;
-        const TARIFA_KWH = 0.80;
+        const TARIFA_KWH = 0.80; 
 
         function addRow() {
             const container = document.getElementById('data-container');
@@ -353,6 +352,7 @@
             dataPoints.sort((a, b) => a.timeDec - b.timeDec);
 
             let totalEnergy = 0;
+            let peakEnergy = 0; 
             let chartLabels = [];
             let chartData = [];
 
@@ -363,13 +363,30 @@
                 if(i > 0) {
                     let dt = dataPoints[i].timeDec - dataPoints[i-1].timeDec;
                     let avgPower = (dataPoints[i].power + dataPoints[i-1].power) / 2;
-                    totalEnergy += (avgPower * dt);
+                    let trapecioArea = avgPower * dt;
+                    
+                    totalEnergy += trapecioArea;
+
+                    let avgTime = (dataPoints[i].timeDec + dataPoints[i-1].timeDec) / 2;
+                    if (avgTime >= 18.0 && avgTime <= 23.0) {
+                        peakEnergy += trapecioArea;
+                    }
                 }
             }
 
             document.getElementById('res-energia').innerText = totalEnergy.toFixed(2) + " kWh";
             let totalCost = totalEnergy * TARIFA_KWH;
             document.getElementById('res-costo').innerText = "S/. " + totalCost.toFixed(2);
+
+            let ahorroDinero = peakEnergy * (TARIFA_KWH * 0.30);
+            let porcentajeAhorro = totalCost > 0 ? (ahorroDinero / totalCost) * 100 : 0;
+            
+            let textoAhorro = document.querySelector('.green-card .result-text strong');
+            if(porcentajeAhorro > 0.5) {
+                textoAhorro.innerText = "↓ " + porcentajeAhorro.toFixed(1) + "% al reprogramar";
+            } else {
+                textoAhorro.innerText = "¡Consumo Optimizado!";
+            }
 
             updateChart(chartLabels, chartData);
         }
